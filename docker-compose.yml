@@ -1,0 +1,37 @@
+version: '2'
+services:
+  zabbix-db-postgres:
+    image: postgres:9.4.10
+    volumes:
+      - zabbix-db-storage:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:ubuntu-3.2.3
+    depends_on:
+      - zabbix-db-postgres
+    links:
+      - zabbix-db-postgres:zabbix-db-postgres
+    environment:
+      - DB_SERVER_HOST=zabbix-db-postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:ubuntu-3.2.3
+    depends_on:
+      - zabbix-db-postgres
+      - zabbix-server
+    ports:
+      - "80:80"
+    links:
+      - zabbix-db-postgres:zabbix-db-postgres
+      - zabbix-server:zabbix-server
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - DB_SERVER_HOST=zabbix-db-postgres
+      - ZBX_SERVER_HOST=zabbix-server
+      - TZ=America/Sao_Paulo
+volumes:
+  zabbix-db-storage:
+    driver: local
